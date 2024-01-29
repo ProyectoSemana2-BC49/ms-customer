@@ -12,6 +12,7 @@ import org.nttdatabc.mscustomer.service.CustomerServiceImpl;
 import org.nttdatabc.mscustomer.utils.exceptions.errors.ErrorResponseException;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +39,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.findAll()).thenReturn(Collections.singletonList(new Customer()));
 
 		// Act
-		List<Customer> result = customerService.getAllCustomersService();
+		List<Customer> result = customerService.getAllCustomersService().firstElement().blockingGet();
 
 		// Assert
 		assertNotNull(result);
@@ -59,7 +60,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.save(any())).thenReturn(customer);
 
 		// Act
-		assertDoesNotThrow(() -> customerService.createCustomerService(customer));
+		assertDoesNotThrow(() -> customerService.createCustomerService(customer).blockingAwait());
 
 		// Assert
 		verify(customerRepository, times(1)).save(any());
@@ -75,7 +76,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.findById(customerId)).thenReturn(Optional.of(expectedCustomer));
 
 		// Act
-		Customer result = assertDoesNotThrow(() -> customerService.getCustomerByIdService(customerId));
+		Customer result = assertDoesNotThrow(() -> customerService.getCustomerByIdService(customerId).blockingGet());
 
 		// Assert
 		assertNotNull(result);
@@ -110,7 +111,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.save(any())).thenReturn(existingCustomer);
 
 		// Act
-		assertDoesNotThrow(() -> customerService.updateCustomerService(customerToUpdate));
+		assertDoesNotThrow(() -> customerService.updateCustomerService(customerToUpdate).blockingAwait());
 
 		// Assert
 		verify(customerRepository, times(1)).findById(customerId);
@@ -127,7 +128,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.findById(customerId)).thenReturn(Optional.of(existingCustomer));
 
 		// Act
-		assertDoesNotThrow(() -> customerService.deleteCustomerByIdService(customerId));
+		assertDoesNotThrow(() -> customerService.deleteCustomerByIdService(customerId).blockingAwait());
 
 		// Assert
 		verify(customerRepository, times(1)).findById(customerId);
@@ -140,12 +141,13 @@ class MsCustomerApplicationTests {
 		String customerId = "testCustomerId";
 		Customer existingCustomer = new Customer();
 		existingCustomer.setId(customerId);
+		existingCustomer.setAuthorizedSigners(new ArrayList<>());
 
 		when(customerRepository.findById(customerId)).thenReturn(Optional.of(existingCustomer));
 
 		// Act and Assert
 		try {
-			List<AuthorizedSigner> result = customerService.getAuthorizedSignersByCustomerIdService(customerId);
+			List<AuthorizedSigner> result = customerService.getAuthorizedSignersByCustomerIdService(customerId).blockingFirst();
 			assertDoesNotThrow(() -> result);
 			assertEquals(existingCustomer.getAuthorizedSigners(), result);
 			verify(customerRepository, times(1)).findById(customerId);
@@ -168,7 +170,7 @@ class MsCustomerApplicationTests {
 		when(customerRepository.save(any())).thenReturn(existingCustomer);
 
 		// Act
-		assertDoesNotThrow(() -> customerService.createAuthorizedSignersByCustomerId(customerId, authorizedSigner));
+		assertDoesNotThrow(() -> customerService.createAuthorizedSignersByCustomerId(customerId, authorizedSigner).blockingAwait());
 
 		// Assert
 		verify(customerRepository, times(1)).findById(customerId);

@@ -2,8 +2,12 @@ package org.nttdatabc.mscustomer.controller;
 
 import static org.nttdatabc.mscustomer.utils.Constantes.PREFIX_PATH;
 
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.util.List;
-import org.nttdatabc.mscustomer.api.CustomerApi;
+import lombok.extern.slf4j.Slf4j;
 import org.nttdatabc.mscustomer.model.AuthorizedSigner;
 import org.nttdatabc.mscustomer.model.Customer;
 import org.nttdatabc.mscustomer.service.CustomerServiceImpl;
@@ -18,77 +22,75 @@ import org.springframework.web.bind.annotation.RestController;
  * Controller del Customer.
  */
 @RestController
+@Slf4j
 @RequestMapping(PREFIX_PATH)
-public class CustomerController implements CustomerApi {
+public class CustomerController implements CustomerControllerApi {
 
   @Autowired
   private CustomerServiceImpl customerServiceImpl;
 
   @Override
-  public ResponseEntity<Void> createCustomer(Customer customer) {
-    try {
-      customerServiceImpl.createCustomerService(customer);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<Void>(HttpStatus.CREATED);
+  public Maybe<ResponseEntity<Object>> createCustomer(Customer customer) throws ErrorResponseException {
+    return customerServiceImpl.createCustomerService(customer)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.debug("createCustomer:: init"))
+        .andThen(Maybe.just(ResponseEntity.status(HttpStatus.CREATED).build()))
+        .doOnSuccess(response -> log.info("createCustomer:: completed"));
   }
 
   @Override
-  public ResponseEntity<List<Customer>> getAllCustomers() {
-    List<Customer> listaCustomers = customerServiceImpl.getAllCustomersService();
-    return new ResponseEntity<>(listaCustomers, HttpStatus.OK);
+  public Observable<ResponseEntity<List<Customer>>> getAllCustomers() {
+    return customerServiceImpl.getAllCustomersService()
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.debug("getAllCustomers:: init"))
+        .doOnComplete(() -> log.info("getAllCustomers: completed"))
+        .map(ResponseEntity::ok);
+  }
+
+  //
+  @Override
+  public Single<ResponseEntity<Customer>> getCustomerById(String customerId) throws ErrorResponseException {
+    return customerServiceImpl.getCustomerByIdService(customerId)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.debug("getCustomerById:: init"))
+        .map(ResponseEntity::ok)
+        .doOnSuccess(cus -> log.debug("getCustomerById:: completed"));
+  }
+
+
+  @Override
+  public Maybe<ResponseEntity<Object>> updateCustomer(Customer customer) throws ErrorResponseException {
+    return customerServiceImpl.updateCustomerService(customer)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.debug("updateCustomer:: init"))
+        .andThen(Maybe.just(ResponseEntity.status(HttpStatus.OK).build()))
+        .doOnSuccess(response -> log.info("updateCustomer:: completed"));
   }
 
   @Override
-  public ResponseEntity<Customer> getCustomerById(String customerId) {
-    Customer customerById = null;
-    try {
-      customerById = customerServiceImpl.getCustomerByIdService(customerId);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<>(customerById, HttpStatus.OK);
+  public Maybe<ResponseEntity<Object>> deleteCustomerById(String customerId) throws ErrorResponseException {
+    return customerServiceImpl.deleteCustomerByIdService(customerId)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.info("deleteCustomerById:: init"))
+        .andThen(Maybe.just(ResponseEntity.status(HttpStatus.OK).build()))
+        .doOnSuccess(objectResponseEntity -> log.info("deleteCustomerById:: completed"));
   }
 
   @Override
-  public ResponseEntity<Void> updateCustomer(Customer customer) {
-    try {
-      customerServiceImpl.updateCustomerService(customer);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<Void>(HttpStatus.OK);
+  public Observable<ResponseEntity<List<AuthorizedSigner>>> getAuthorizedSignersByCustomerId(String customerId) throws ErrorResponseException {
+    return customerServiceImpl.getAuthorizedSignersByCustomerIdService(customerId)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.info("getAuthorizedSignersByCustomerId:: init"))
+        .doOnComplete(() -> log.info("getAuthorizedSignersByCustomerId:: completed"))
+        .map(authorizedSigners -> ResponseEntity.ok().body(authorizedSigners));
   }
 
   @Override
-  public ResponseEntity<Void> deleteCustomerById(String customerId) {
-    try {
-      customerServiceImpl.deleteCustomerByIdService(customerId);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<Void>(HttpStatus.OK);
-  }
-
-  @Override
-  public ResponseEntity<List<AuthorizedSigner>> getAuthorizedSignersByCustomerId(String customerId) {
-    List<AuthorizedSigner> listaAuthorized = null;
-    try {
-      listaAuthorized = customerServiceImpl.getAuthorizedSignersByCustomerIdService(customerId);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<>(listaAuthorized, HttpStatus.OK);
-  }
-
-  @Override
-  public ResponseEntity<Void> createAuthorizedSignersByCustomerId(String customerId, AuthorizedSigner auth) {
-    try {
-      customerServiceImpl.createAuthorizedSignersByCustomerId(customerId, auth);
-    } catch (ErrorResponseException e) {
-      throw new RuntimeException(e);
-    }
-    return new ResponseEntity<Void>(HttpStatus.CREATED);
+  public Maybe<ResponseEntity<Object>> createAuthorizedSignersByCustomerId(String customerId, AuthorizedSigner auth) throws ErrorResponseException {
+    return customerServiceImpl.createAuthorizedSignersByCustomerId(customerId, auth)
+        .subscribeOn(Schedulers.io())
+        .doOnSubscribe(disposable -> log.info("createAuthorizedSignersByCustomerId:: init"))
+        .andThen(Maybe.just(ResponseEntity.status(HttpStatus.CREATED).build()))
+        .doOnSuccess(objectResponseEntity -> log.info("createAuthorizedSignersByCustomerId:: completed"));
   }
 }

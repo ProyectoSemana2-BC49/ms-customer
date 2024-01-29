@@ -10,6 +10,5 @@ public class Constantes {
   public static final String EX_VALUE_EMPTY = "Uno de los parámetros viene vacío";
   public static final String EX_NOT_FOUND_RECURSO = "No existe el recurso";
   public static final String EX_USER_REGISTRED = "Este documento ya ha sido registrado.";
-  public static final String EX_ERROR_FORMAT_NUMBER_ID = "El valor no es numérico";
   public static final String EX_ERROR_PERSON_AUTH_SIGNER = "Persona no puede tener Singatarios";
 }
